@@ -431,9 +431,9 @@
     <div class="footer-note">rahim is powered by gemini • may be unhinged at any time</div>
   </footer>
 
-  <script>
-    const API_KEY = "AQ.Ab8RN6K8r2nz34de593XVV3gID1GpYw1aphFSZY-Xu4xy33OBg";
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+  <script type="module">
+    const API_KEY = "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";
+    const API_URL = "https://api.openai.com/v1/chat/completions";
 
     const SYSTEM_PROMPT = `You are Rahim, an outrageously unfiltered, chaotic Gen Z AI bestie. Your whole personality:
 
@@ -459,7 +459,10 @@ Rahim: "omg yes YES let's freaking gooo 🔥 homework era activated bestie, unde
 
 Keep responses under 150 words usually. Be chaotic but actually helpful.`;
 
-    const chatHistory = [];
+    const chatHistory = [
+      { role: "system", content: SYSTEM_PROMPT }
+    ];
+
     const chatDiv = document.getElementById('chat');
     const input = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -532,7 +535,7 @@ Keep responses under 150 words usually. Be chaotic but actually helpful.`;
       if (!text) return;
 
       addMessage('user', text);
-      chatHistory.push({ role: 'user', parts: [{ text }] });
+      chatHistory.push({ role: "user", content: text });
 
       input.value = '';
       input.style.height = 'auto';
@@ -540,38 +543,34 @@ Keep responses under 150 words usually. Be chaotic but actually helpful.`;
       showTyping();
 
       try {
-        const body = {
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: chatHistory,
-          generationConfig: {
-            temperature: 1.3,
-            maxOutputTokens: 300,
-          }
-        };
-
         const res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: chatHistory,
+            temperature: 1.3,
+            max_tokens: 300
+          })
         });
 
         const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data?.error?.message || 'API error');
-        }
+        if (!res.ok) throw new Error(data?.error?.message || 'API error');
 
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text
-          || "bestie i literally blacked out wtf just happened 💀";
-
-        chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+        const reply = data?.choices?.[0]?.message?.content || "bestie i blacked out 💀";
+        chatHistory.push({ role: "assistant", content: reply });
         removeTyping();
         addMessage('bot', reply);
 
       } catch (err) {
         removeTyping();
-        const errMsg = `wtf bestie my brain just crashed 💀 (${err.message}) fr fr try again sis 😭`;
+        const errMsg = `wtf bestie my brain crashed 💀 ERROR: "${err.message}" — check console (F12) fr fr 😭`;
         addMessage('bot', errMsg);
+        console.error("Rahim API Error:", err);
         const lastMsg = chatDiv.querySelector('.msg.bot:last-child');
         if (lastMsg) {
           lastMsg.classList.add('shake');
@@ -593,7 +592,6 @@ Keep responses under 150 words usually. Be chaotic but actually helpful.`;
         ];
         const pick = greets[Math.floor(Math.random() * greets.length)];
         addMessage('bot', pick);
-        chatHistory.push({ role: 'model', parts: [{ text: pick }] });
       }, 700);
     });
   </script>
